@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Koji Adventure: Interactive Story & Game</title>
+    <style>
+        /* --- CSS: STYLES --- */
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow-x: hidden;
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #000;
+            color: white;
+        }
+
+        .main-container {
+            height: 400vh; /* Sesuaikan panjang halaman dengan jumlah panel */
+        }
+
+        .panel {
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+            border-bottom: 2px solid #333;
+        }
+
+        .scene-container {
+            position: sticky;
+            top: 0;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .layer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            will-change: transform;
+        }
+
+        .layer img {
+            min-width: 100%;
+            min-height: 100%;
+            object-fit: cover;
+        }
+
+        /* Spesifik untuk Karakter Koji di Parallax */
+        .layer-mid img {
+            min-width: 40%;
+            height: auto;
+            position: absolute;
+            bottom: 10%;
+        }
+
+        .layer-text {
+            z-index: 10;
+        }
+
+        .panel-content {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border: 2px solid #0ff;
+            text-align: center;
+            max-width: 80%;
+            box-shadow: 0 0 15px #0ff;
+        }
+
+        /* --- GAME SECTION CSS --- */
+        .game-scene {
+            background: #050505;
+            cursor: crosshair;
+        }
+
+        .game-area {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+        }
+
+        .game-bkg img {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.4;
+        }
+
+        .game-char {
+            position: absolute;
+            width: 100px;
+            height: auto;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        .game-char img { width: 100%; }
+
+        .banana-sprite {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            z-index: 60;
+            animation: fallAnimation 3s linear forwards;
+        }
+
+        @keyframes fallAnimation {
+            from { top: -50px; }
+            to { top: 105vh; }
+        }
+
+        .game-ui {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            z-index: 100;
+        }
+
+        .ui-element {
+            background: rgba(0, 255, 255, 0.2);
+            padding: 10px 20px;
+            border: 1px solid #0ff;
+            font-size: 1.2rem;
+        }
+
+        .overlay-msg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+        }
+
+        .overlay-msg.active { display: flex; }
+
+        button {
+            padding: 15px 30px;
+            background: #0ff;
+            border: none;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        button:hover { background: #fff; }
+
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+
+        <section id="panel1" class="panel">
+            <div class="scene-container">
+                <div class="layer layer-bg" data-speed="0.2">
+                    <img src="bkg_kota.png" alt="Background City">
+                </div>
+                <div class="layer layer-mid" data-speed="0.6">
+                    <img src="mid_koji.png" alt="Koji Action">
+                </div>
+                <div class="layer layer-fg" data-speed="1.2">
+                    <img src="fore_kabut.png" alt="Fore Mist">
+                </div>
+                <div class="layer layer-text" data-speed="0">
+                    <div class="panel-content">
+                        <h2>"Di mana $ANIMAL bersembunyi?"</h2>
+                        <p>Scroll ke bawah untuk mencari tahu...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="panel-game" class="panel game-scene">
+            <div class="game-area">
+                <div class="game-bkg">
+                    <img src="bkg_kota.png" alt="Game Background">
+                </div>
+
+                <div id="game-koji" class="game-char">
+                    <img src="mid_koji.png" alt="Koji Player">
+                </div>
+
+                <div id="banana-spawn-area"></div>
+
+                <div class="game-ui">
+                    <div class="ui-element">SKOR: <span id="score-display">0</span></div>
+                    <div class="ui-element">WAKTU: <span id="timer-display">30</span>s</div>
+                </div>
+
+                <div id="start-overlay" class="overlay-msg active">
+                    <h1>LORONG PISANG TERDETEKSI!</h1>
+                    <p>Klik tombol di bawah untuk mengisi energi Koji.</p>
+                    <button onclick="startGame()">MULAI KUMPULKAN</button>
+                </div>
+
+                <div id="end-overlay" class="overlay-msg">
+                    <h1>WAKTU HABIS!</h1>
+                    <h3>Total Pisang: <span id="final-score">0</span></h3>
+                    <button onclick="startGame()">MAIN LAGI</button>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        /* --- JAVASCRIPT: LOGIC --- */
+
+        // 1. PARALLAX SCROLLING LOGIC
+        document.addEventListener('scroll', function() {
+            const panels = document.querySelectorAll('.panel');
+            const scrollTop = window.pageYOffset;
+
+            panels.forEach(panel => {
+                const panelTop = panel.offsetTop;
+                const panelHeight = panel.offsetHeight;
+
+                if (scrollTop >= panelTop && scrollTop < panelTop + panelHeight) {
+                    const panelScroll = scrollTop - panelTop;
+                    const layers = panel.querySelectorAll('.layer');
+
+                    layers.forEach(layer => {
+                        const speed = layer.getAttribute('data-speed');
+                        if (speed !== "0") {
+                            const yPos = -(panelScroll * speed);
+                            layer.style.transform = `translate3d(0, ${yPos}px, 0)`;
+                        }
+                    });
+                }
+            });
+        });
+
+        // 2. GAME LOGIC
+        let score = 0;
+        let timeLeft = 30;
+        let gameActive = false;
+        let gameInterval, bananaInterval;
+
+        const gameKoji = document.getElementById('game-koji');
+        const gameArea = document.querySelector('.game-area');
+        const bananaArea = document.getElementById('banana-spawn-area');
+        const scoreDisplay = document.getElementById('score-display');
+        const timerDisplay = document.getElementById('timer-display');
+        const startOverlay = document.getElementById('start-overlay');
+        const endOverlay = document.getElementById('end-overlay');
+
+        // Gerakkan Koji mengikuti Mouse
+        gameArea.addEventListener('mousemove', (e) => {
+            if (!gameActive) return;
+            const rect = gameArea.getBoundingClientRect();
+            let x = e.clientX - rect.left - (gameKoji.offsetWidth / 2);
+            
+            // Batasi agar tidak keluar area
+            x = Math.max(0, Math.min(x, rect.width - gameKoji.offsetWidth));
+            gameKoji.style.left = x + 'px';
+        });
+
+        function startGame() {
+            score = 0;
+            timeLeft = 30;
+            gameActive = true;
+            scoreDisplay.innerText = score;
+            timerDisplay.innerText = timeLeft;
+            
+            startOverlay.classList.remove('active');
+            endOverlay.classList.remove('active');
+            bananaArea.innerHTML = '';
+
+            gameInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.innerText = timeLeft;
+                if (timeLeft <= 0) endGame();
+            }, 1000);
+
+            bananaInterval = setInterval(spawnBanana, 600);
+        }
+
+        function spawnBanana() {
+            const banana = document.createElement('img');
+            banana.src = 'banana.png'; 
+            banana.classList.add('banana-sprite');
+            
+            const x = Math.random() * (gameArea.offsetWidth - 40);
+            banana.style.left = x + 'px';
+
+            // Klik pisang untuk dapat poin
+            banana.addEventListener('mousedown', function() {
+                score++;
+                scoreDisplay.innerText = score;
+                this.remove();
+            });
+
+            bananaArea.appendChild(banana);
+
+            // Hapus jika jatuh ke bawah
+            setTimeout(() => { if(banana) banana.remove(); }, 3000);
+        }
+
+        function endGame() {
+            gameActive = false;
+            clearInterval(gameInterval);
+            clearInterval(bananaInterval);
+            document.getElementById('final-score').innerText = score;
+            endOverlay.classList.add('active');
+        }
+
+    </script>
+</body>
+</html>
