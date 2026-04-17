@@ -2,327 +2,215 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Koji Adventure: Interactive Story & Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Koji Catch Adventure</title>
     <style>
-        /* --- CSS: STYLES --- */
         body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            overflow-x: hidden;
-            font-family: 'Courier New', Courier, monospace;
-            background-color: #000;
-            color: white;
+            margin: 0; padding: 0; height: 100%;
+            overflow-x: hidden; font-family: sans-serif;
+            background-color: #000; color: white;
+            touch-action: none; /* Penting untuk kontrol game yang lancar */
         }
 
-        .main-container {
-            height: 400vh; /* Sesuaikan panjang halaman dengan jumlah panel */
-        }
+        .main-container { height: 250vh; }
+        .panel { height: 100vh; position: relative; overflow: hidden; }
+        .scene-container { position: sticky; top: 0; width: 100%; height: 100vh; }
+        
+        .layer img { height: 100%; width: auto; min-width: 100vw; object-fit: cover; }
+        .layer-mid img { height: 45% !important; position: absolute; bottom: 5%; }
 
-        .panel {
-            height: 100vh;
-            position: relative;
-            overflow: hidden;
-            border-bottom: 2px solid #333;
-        }
-
-        .scene-container {
-            position: sticky;
-            top: 0;
-            width: 100%;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .layer {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            will-change: transform;
-        }
-
-        .layer img {
-            min-width: 100%;
-            min-height: 100%;
-            object-fit: cover;
-        }
-
-        /* Spesifik untuk Karakter Koji di Parallax */
-        .layer-mid img {
-            min-width: 40%;
-            height: auto;
-            position: absolute;
-            bottom: 10%;
-        }
-
-        .layer-text {
-            z-index: 10;
-        }
-
-        .panel-content {
-            background: rgba(0, 0, 0, 0.8);
-            padding: 20px;
-            border: 2px solid #0ff;
-            text-align: center;
-            max-width: 80%;
-            box-shadow: 0 0 15px #0ff;
-        }
-
-        /* --- GAME SECTION CSS --- */
-        .game-scene {
-            background: #050505;
-            cursor: crosshair;
-        }
-
-        .game-area {
-            position: relative;
-            width: 100%;
-            height: 100vh;
-        }
-
-        .game-bkg img {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            opacity: 0.4;
-        }
+        /* GAME STYLES */
+        .game-area { position: relative; width: 100%; height: 100vh; overflow: hidden; background: #050505; }
+        .game-bkg img { position: absolute; width: 100%; height: 100%; object-fit: cover; opacity: 0.3; }
 
         .game-char {
             position: absolute;
-            width: 100px;
-            height: auto;
-            bottom: 50px;
-            left: 50%;
+            width: 80px; height: 110px; /* Area tabrakan */
+            bottom: 40px; left: 50%;
             transform: translateX(-50%);
-            pointer-events: none;
             z-index: 50;
+            transition: transform 0.1s ease-out;
         }
+        .game-char img { width: 100%; pointer-events: none; }
 
-        .game-char img { width: 100%; }
-
-        .banana-sprite {
+        .item {
             position: absolute;
-            width: 40px;
-            height: 40px;
-            cursor: pointer;
+            width: 40px; height: 40px;
             z-index: 60;
-            animation: fallAnimation 3s linear forwards;
-        }
-
-        @keyframes fallAnimation {
-            from { top: -50px; }
-            to { top: 105vh; }
+            will-change: transform;
         }
 
         .game-ui {
-            position: absolute;
-            top: 20px;
-            width: 100%;
-            display: flex;
-            justify-content: space-around;
-            z-index: 100;
+            position: absolute; top: 20px; width: 100%;
+            display: flex; justify-content: space-around; z-index: 100;
         }
-
-        .ui-element {
-            background: rgba(0, 255, 255, 0.2);
-            padding: 10px 20px;
-            border: 1px solid #0ff;
-            font-size: 1.2rem;
-        }
+        .ui-element { background: rgba(0,0,0,0.8); padding: 10px 20px; border: 1px solid #0ff; border-radius: 10px; }
 
         .overlay-msg {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 200;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); display: none;
+            flex-direction: column; justify-content: center; align-items: center;
+            z-index: 200; text-align: center; padding: 20px;
         }
-
         .overlay-msg.active { display: flex; }
-
-        button {
-            padding: 15px 30px;
-            background: #0ff;
-            border: none;
-            color: black;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 20px;
+        button { padding: 15px 40px; background: #0ff; border: none; font-weight: bold; border-radius: 30px; }
+        
+        /* Efek saat kena Bom */
+        .shake { animation: shake 0.3s; }
+        @keyframes shake {
+            0% { transform: translateX(-50%) translate(0); }
+            25% { transform: translateX(-50%) translate(5px); }
+            50% { transform: translateX(-50%) translate(-5px); }
+            100% { transform: translateX(-50%) translate(0); }
         }
-
-        button:hover { background: #fff; }
-
     </style>
 </head>
 <body>
 
-    <div class="main-container">
-
-        <section id="panel1" class="panel">
-            <div class="scene-container">
-                <div class="layer layer-bg" data-speed="0.2">
-                    <img src="bkg_kota.png" alt="Background City">
-                </div>
-                <div class="layer layer-mid" data-speed="0.6">
-                    <img src="mid_koji.png" alt="Koji Action">
-                </div>
-                <div class="layer layer-fg" data-speed="1.2">
-                    <img src="fore_kabut.png" alt="Fore Mist">
-                </div>
-                <div class="layer layer-text" data-speed="0">
-                    <div class="panel-content">
-                        <h2>"Di mana $ANIMAL bersembunyi?"</h2>
-                        <p>Scroll ke bawah untuk mencari tahu...</p>
-                    </div>
-                </div>
+<div class="main-container">
+    <section class="panel">
+        <div class="scene-container">
+            <div class="layer"><img src="bkg_kota.png"></div>
+            <div class="layer-mid"><img src="mid_koji.png"></div>
+            <div style="position:absolute; z-index:100; background:rgba(0,0,0,0.7); padding:20px; border:1px solid #0ff;">
+                <h2>KOJI: BANANA HUNT</h2>
+                <p>Scroll ke bawah untuk misi!</p>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <section id="panel-game" class="panel game-scene">
-            <div class="game-area">
-                <div class="game-bkg">
-                    <img src="bkg_kota.png" alt="Game Background">
-                </div>
-
-                <div id="game-koji" class="game-char">
-                    <img src="mid_koji.png" alt="Koji Player">
-                </div>
-
-                <div id="banana-spawn-area"></div>
-
-                <div class="game-ui">
-                    <div class="ui-element">SKOR: <span id="score-display">0</span></div>
-                    <div class="ui-element">WAKTU: <span id="timer-display">30</span>s</div>
-                </div>
-
-                <div id="start-overlay" class="overlay-msg active">
-                    <h1>LORONG PISANG TERDETEKSI!</h1>
-                    <p>Klik tombol di bawah untuk mengisi energi Koji.</p>
-                    <button onclick="startGame()">MULAI KUMPULKAN</button>
-                </div>
-
-                <div id="end-overlay" class="overlay-msg">
-                    <h1>WAKTU HABIS!</h1>
-                    <h3>Total Pisang: <span id="final-score">0</span></h3>
-                    <button onclick="startGame()">MAIN LAGI</button>
-                </div>
+    <section class="panel">
+        <div class="game-area" id="gameArea">
+            <div class="game-bkg"><img src="bkg_kota.png"></div>
+            
+            <div id="game-koji" class="game-char">
+                <img src="mid_koji.png">
             </div>
-        </section>
 
-    </div>
+            <div id="item-container"></div>
 
-    <script>
-        /* --- JAVASCRIPT: LOGIC --- */
+            <div class="game-ui">
+                <div class="ui-element">SKOR: <span id="score-display">0</span></div>
+                <div class="ui-element">WAKTU: <span id="timer-display">30</span></div>
+            </div>
 
-        // 1. PARALLAX SCROLLING LOGIC
-        document.addEventListener('scroll', function() {
-            const panels = document.querySelectorAll('.panel');
-            const scrollTop = window.pageYOffset;
+            <div id="start-overlay" class="overlay-msg active">
+                <h2 style="color: gold;">ISI ENERGI KOJI!</h2>
+                <p>Geser Koji untuk menangkap Pisang.<br><b style="color:red;">HINDARI BOM!</b></p>
+                <button onclick="startGame()">MULAI MISI</button>
+            </div>
 
-            panels.forEach(panel => {
-                const panelTop = panel.offsetTop;
-                const panelHeight = panel.offsetHeight;
+            <div id="end-overlay" class="overlay-msg">
+                <h2>MISI SELESAI</h2>
+                <h1 id="final-score" style="color:#0ff; font-size: 3rem;">0</h1>
+                <button onclick="startGame()">ULANGI</button>
+            </div>
+        </div>
+    </section>
+</div>
 
-                if (scrollTop >= panelTop && scrollTop < panelTop + panelHeight) {
-                    const panelScroll = scrollTop - panelTop;
-                    const layers = panel.querySelectorAll('.layer');
+<script>
+    let score = 0, timeLeft = 30, gameActive = false;
+    let gameInterval, spawnInterval, collisionInterval;
 
-                    layers.forEach(layer => {
-                        const speed = layer.getAttribute('data-speed');
-                        if (speed !== "0") {
-                            const yPos = -(panelScroll * speed);
-                            layer.style.transform = `translate3d(0, ${yPos}px, 0)`;
-                        }
-                    });
+    const koji = document.getElementById('game-koji');
+    const area = document.getElementById('gameArea');
+    const itemContainer = document.getElementById('item-container');
+    const scoreUI = document.getElementById('score-display');
+    const timerUI = document.getElementById('timer-display');
+
+    // Kontrol Geser Koji
+    area.addEventListener('touchmove', (e) => {
+        if (!gameActive) return;
+        const touch = e.touches[0];
+        const rect = area.getBoundingClientRect();
+        let x = touch.clientX - rect.left - (koji.offsetWidth / 2);
+        x = Math.max(0, Math.min(x, rect.width - koji.offsetWidth));
+        koji.style.left = x + 'px';
+    });
+
+    function startGame() {
+        score = 0; timeLeft = 30; gameActive = true;
+        scoreUI.innerText = score; timerUI.innerText = timeLeft;
+        document.querySelectorAll('.overlay-msg').forEach(o => o.classList.remove('active'));
+        itemContainer.innerHTML = '';
+        
+        gameInterval = setInterval(() => {
+            timeLeft--;
+            timerUI.innerText = timeLeft;
+            if (timeLeft <= 0) endGame();
+        }, 1000);
+
+        spawnInterval = setInterval(spawnItem, 500);
+        collisionInterval = setInterval(checkCollisions, 50); // Cek tabrakan setiap 50ms
+    }
+
+    function spawnItem() {
+        if (!gameActive) return;
+        const item = document.createElement('img');
+        const isBomb = Math.random() < 0.3; // 30% peluang muncul bom
+        
+        item.src = isBomb ? 'bomb.png' : 'banana.png';
+        item.className = 'item';
+        item.dataset.type = isBomb ? 'bomb' : 'banana';
+        
+        const x = Math.random() * (area.offsetWidth - 40);
+        item.style.left = x + 'px';
+        item.style.top = '-50px';
+        
+        itemContainer.appendChild(item);
+
+        // Animasi jatuh manual untuk kontrol koordinat yang lebih baik
+        let pos = -50;
+        const fall = setInterval(() => {
+            if (!gameActive) { clearInterval(fall); return; }
+            pos += 5; // Kecepatan jatuh
+            item.style.top = pos + 'px';
+            
+            if (pos > area.offsetHeight) {
+                clearInterval(fall);
+                item.remove();
+            }
+        }, 20);
+    }
+
+    function checkCollisions() {
+        if (!gameActive) return;
+        const kojiRect = koji.getBoundingClientRect();
+        const items = document.querySelectorAll('.item');
+
+        items.forEach(item => {
+            const itemRect = item.getBoundingClientRect();
+
+            // Logika Tabrakan (Overlap)
+            if (
+                itemRect.left < kojiRect.right &&
+                itemRect.right > kojiRect.left &&
+                itemRect.top < kojiRect.bottom &&
+                itemRect.bottom > kojiRect.top
+            ) {
+                if (item.dataset.type === 'banana') {
+                    score += 10;
+                } else {
+                    score = Math.max(0, score - 20); // Kurangi skor jika kena bom
+                    koji.classList.add('shake');
+                    setTimeout(() => koji.classList.remove('shake'), 300);
                 }
-            });
+                scoreUI.innerText = score;
+                item.remove(); // Hapus item setelah bersentuhan
+            }
         });
+    }
 
-        // 2. GAME LOGIC
-        let score = 0;
-        let timeLeft = 30;
-        let gameActive = false;
-        let gameInterval, bananaInterval;
+    function endGame() {
+        gameActive = false;
+        clearInterval(gameInterval);
+        clearInterval(spawnInterval);
+        clearInterval(collisionInterval);
+        document.getElementById('final-score').innerText = score;
+        document.getElementById('end-overlay').classList.add('active');
+    }
+</script>
 
-        const gameKoji = document.getElementById('game-koji');
-        const gameArea = document.querySelector('.game-area');
-        const bananaArea = document.getElementById('banana-spawn-area');
-        const scoreDisplay = document.getElementById('score-display');
-        const timerDisplay = document.getElementById('timer-display');
-        const startOverlay = document.getElementById('start-overlay');
-        const endOverlay = document.getElementById('end-overlay');
-
-        // Gerakkan Koji mengikuti Mouse
-        gameArea.addEventListener('mousemove', (e) => {
-            if (!gameActive) return;
-            const rect = gameArea.getBoundingClientRect();
-            let x = e.clientX - rect.left - (gameKoji.offsetWidth / 2);
-            
-            // Batasi agar tidak keluar area
-            x = Math.max(0, Math.min(x, rect.width - gameKoji.offsetWidth));
-            gameKoji.style.left = x + 'px';
-        });
-
-        function startGame() {
-            score = 0;
-            timeLeft = 30;
-            gameActive = true;
-            scoreDisplay.innerText = score;
-            timerDisplay.innerText = timeLeft;
-            
-            startOverlay.classList.remove('active');
-            endOverlay.classList.remove('active');
-            bananaArea.innerHTML = '';
-
-            gameInterval = setInterval(() => {
-                timeLeft--;
-                timerDisplay.innerText = timeLeft;
-                if (timeLeft <= 0) endGame();
-            }, 1000);
-
-            bananaInterval = setInterval(spawnBanana, 600);
-        }
-
-        function spawnBanana() {
-            const banana = document.createElement('img');
-            banana.src = 'banana.png'; 
-            banana.classList.add('banana-sprite');
-            
-            const x = Math.random() * (gameArea.offsetWidth - 40);
-            banana.style.left = x + 'px';
-
-            // Klik pisang untuk dapat poin
-            banana.addEventListener('mousedown', function() {
-                score++;
-                scoreDisplay.innerText = score;
-                this.remove();
-            });
-
-            bananaArea.appendChild(banana);
-
-            // Hapus jika jatuh ke bawah
-            setTimeout(() => { if(banana) banana.remove(); }, 3000);
-        }
-
-        function endGame() {
-            gameActive = false;
-            clearInterval(gameInterval);
-            clearInterval(bananaInterval);
-            document.getElementById('final-score').innerText = score;
-            endOverlay.classList.add('active');
-        }
-
-    </script>
 </body>
 </html>
