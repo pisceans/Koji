@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Koji Hunt: Final Edition</title>
+    <title>Koji Hunt: D-Pad Edition</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body, html {
@@ -11,7 +11,7 @@
             width: 100%; height: 100%;
             background-color: #000; color: white;
             font-family: 'Courier New', Courier, monospace;
-            overflow-x: hidden;
+            overflow: hidden;
         }
 
         /* --- LAYAR PILIH BAHASA --- */
@@ -26,53 +26,54 @@
             font-size: 1.2rem; font-weight: bold; border-radius: 10px;
         }
 
-        /* --- STRUKTUR HALAMAN --- */
-        .main-container { width: 100%; }
         .panel {
             width: 100%; height: 100vh;
             position: relative; overflow: hidden;
             display: flex; justify-content: center; align-items: center;
         }
         
-        .layer-bg { position: absolute; width: 100%; height: 100%; z-index: 1; }
-        .layer-bg img { width: 100%; height: 100%; object-fit: cover; opacity: 0.5; }
-
-        .floating-text {
-            z-index: 10; background: rgba(0,0,0,0.85); padding: 25px;
-            border: 2px solid #0ff; text-align: center; width: 85%;
-        }
-
         /* --- AREA GAME --- */
         .game-area {
             position: relative; width: 100%; height: 100vh;
             background: #000; overflow: hidden; touch-action: none;
         }
 
-        /* KOJI: UKURAN BESAR & RESPONSIF */
         #game-koji {
             position: absolute;
-            width: 180px; /* Ukuran Besar */
-            bottom: 40px; left: 50%;
-            transform: translateX(-50%);
-            z-index: 100;
-            filter: drop-shadow(0 0 15px #0ff);
+            width: 160px; bottom: 120px; /* Dinaikkan sedikit agar tidak tertutup D-Pad */
+            left: 50%; transform: translateX(-50%);
+            z-index: 100; filter: drop-shadow(0 0 15px #0ff);
             will-change: left;
-            pointer-events: none;
         }
         #game-koji img { width: 100%; display: block; }
 
         .item { position: absolute; width: 60px; height: 60px; z-index: 50; }
 
-        /* UI SKOR: Posisi Aman dari Status Bar */
+        /* UI SKOR */
         .game-ui {
-            position: absolute; top: 50px; width: 100%;
+            position: absolute; top: 40px; width: 100%;
             display: flex; justify-content: space-evenly; z-index: 200;
         }
         .ui-box {
-            background: rgba(0,0,0,0.9); padding: 12px;
-            border: 2px solid #0ff; color: #0ff;
-            font-weight: bold; min-width: 120px; text-align: center;
+            background: rgba(0,0,0,0.9); padding: 10px;
+            border: 2px solid #0ff; color: #0ff; font-weight: bold; min-width: 110px; text-align: center;
         }
+
+        /* --- D-PAD CONTROLS --- */
+        .controls {
+            position: absolute; bottom: 20px; width: 100%;
+            display: flex; justify-content: space-between;
+            padding: 0 30px; z-index: 400;
+        }
+        .dpad-btn {
+            width: 80px; height: 80px;
+            background: rgba(0, 255, 255, 0.2);
+            border: 3px solid #0ff; border-radius: 50%;
+            color: #0ff; font-size: 2rem;
+            display: flex; justify-content: center; align-items: center;
+            user-select: none; touch-action: none;
+        }
+        .dpad-btn:active { background: #0ff; color: #000; }
 
         .overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -81,11 +82,7 @@
             z-index: 300; padding: 25px; text-align: center;
         }
         .overlay.active { display: flex; }
-        
-        .btn-main {
-            padding: 18px 50px; background: #0ff; border: none;
-            font-weight: bold; border-radius: 5px; font-size: 1.3rem; margin-top: 20px;
-        }
+        .btn-main { padding: 15px 40px; background: #0ff; border: none; font-weight: bold; margin-top: 20px; }
 
         #flash { position: absolute; width: 100%; height: 100%; z-index: 150; pointer-events: none; }
         .damage { animation: flashRed 0.2s; }
@@ -103,18 +100,8 @@
 
 <div class="main-container">
     <section class="panel">
-        <div class="layer-bg"><img src="bkg_kota.png"></div>
-        <div class="floating-text">
-            <h1 id="t-title">KOJI HUNT</h1>
-            <p id="t-sub" style="color:gold;"></p>
-            <p id="t-scroll"></p>
-        </div>
-    </section>
-
-    <section class="panel">
         <div class="game-area" id="gameArea">
             <div id="flash"></div>
-            <div class="game-bkg" style="position:absolute; width:100%; height:100%; opacity:0.3;"><img src="bkg_kota.png" style="width:100%; height:100%; object-fit:cover;"></div>
             
             <div id="game-koji"><img src="mid_koji.png"></div>
             <div id="item-container"></div>
@@ -122,6 +109,11 @@
             <div class="game-ui">
                 <div class="ui-box"><span id="l-score">SCORE</span>: <span id="score">0</span></div>
                 <div class="ui-box"><span id="l-time">TIME</span>: <span id="timer">30</span></div>
+            </div>
+
+            <div class="controls">
+                <div class="dpad-btn" id="btn-left">◀</div>
+                <div class="dpad-btn" id="btn-right">▶</div>
             </div>
 
             <div id="start-overlay" class="overlay">
@@ -141,15 +133,17 @@
 
 <script>
     const i18n = {
-        id: { sub: "KARAKTER BESAR", scroll: "Scroll ke bawah!", score: "SKOR", time: "WAKTU", ready: "SIAP?", inst: "Tangkap Pisang!", start: "MULAI", fin: "SELESAI", retry: "ULANGI" },
-        en: { sub: "BIG CHARACTER MODE", scroll: "Scroll down to play!", score: "SCORE", time: "TIME", ready: "READY?", inst: "Catch Bananas!", start: "START", fin: "FINISHED", retry: "RETRY" },
-        jp: { sub: "巨大モード", scroll: "下にスクロール！", score: "スコア", time: "時間", ready: "準備完了？", inst: "バナナをゲット！", start: "スタート", fin: "終了", retry: "リトライ" }
+        id: { score: "SKOR", time: "WAKTU", ready: "SIAP?", inst: "Gunakan tombol panah!", start: "MULAI", fin: "SELESAI", retry: "ULANGI" },
+        en: { score: "SCORE", time: "TIME", ready: "READY?", inst: "Use arrow buttons!", start: "START", fin: "FINISHED", retry: "RETRY" },
+        jp: { score: "スコア", time: "時間", ready: "準備完了？", inst: "矢印ボタンを使って！", start: "スタート", fin: "終了", retry: "リトライ" }
     };
+
+    let score = 0, timeLeft = 30, gameActive = false, speed = 8;
+    let kojiX = 50; // Dalam persen
+    let moveLeft = false, moveRight = false;
 
     function setLanguage(lang) {
         const t = i18n[lang];
-        document.getElementById('t-sub').innerText = t.sub;
-        document.getElementById('t-scroll').innerText = t.scroll;
         document.getElementById('l-score').innerText = t.score;
         document.getElementById('l-time').innerText = t.time;
         document.getElementById('t-ready').innerText = t.ready;
@@ -161,20 +155,33 @@
         document.getElementById('start-overlay').classList.add('active');
     }
 
-    let score = 0, timeLeft = 30, gameActive = false, speed = 8;
     const koji = document.getElementById('game-koji');
     const area = document.getElementById('gameArea');
     const itemContainer = document.getElementById('item-container');
 
-    // KONTROL ULTRA RESPONSIF (Anti-Lag)
-    area.addEventListener('touchmove', (e) => {
-        if(!gameActive) return;
-        const x = e.touches[0].clientX - area.getBoundingClientRect().left - (koji.offsetWidth/2);
-        koji.style.left = Math.max(0, Math.min(x, area.offsetWidth - koji.offsetWidth)) + 'px';
-    }, { passive: false });
+    // LOGIKA D-PAD (Hold to move)
+    const btnL = document.getElementById('btn-left');
+    const btnR = document.getElementById('btn-right');
+
+    btnL.addEventListener('touchstart', (e) => { e.preventDefault(); moveLeft = true; });
+    btnL.addEventListener('touchend', () => moveLeft = false);
+    btnR.addEventListener('touchstart', (e) => { e.preventDefault(); moveRight = true; });
+    btnR.addEventListener('touchend', () => moveRight = false);
+
+    // Loop Pergerakan Koji
+    function updateKoji() {
+        if (gameActive) {
+            if (moveLeft) kojiX -= 1.5;
+            if (moveRight) kojiX += 1.5;
+            kojiX = Math.max(5, Math.min(95, kojiX));
+            koji.style.left = kojiX + '%';
+        }
+        requestAnimationFrame(updateKoji);
+    }
+    updateKoji();
 
     function startGame() {
-        score = 0; timeLeft = 30; speed = 8; gameActive = true;
+        score = 0; timeLeft = 30; speed = 8; gameActive = true; kojiX = 50;
         document.getElementById('score').innerText = "0";
         document.getElementById('timer').innerText = "30";
         document.querySelectorAll('.overlay').forEach(o => o.classList.remove('active'));
@@ -183,7 +190,7 @@
         const timerFunc = setInterval(() => {
             timeLeft--;
             document.getElementById('timer').innerText = timeLeft;
-            if(timeLeft % 5 === 0) speed += 2;
+            if(timeLeft % 5 === 0) speed += 1.5;
             if(timeLeft <= 0) { clearInterval(timerFunc); endGame(); }
         }, 1000);
 
@@ -206,10 +213,9 @@
             y += speed;
             item.style.top = y + 'px';
             
-            // Cek Tabrakan
             const k = koji.getBoundingClientRect();
             const i = item.getBoundingClientRect();
-            if(i.left < k.right-30 && i.right > k.left+30 && i.top < k.bottom-10 && i.bottom > k.top+10) {
+            if(i.left < k.right-40 && i.right > k.left+40 && i.top < k.bottom-20 && i.bottom > k.top+20) {
                 if(isBomb) {
                     score = Math.max(0, score - 50);
                     document.getElementById('flash').classList.add('damage');
@@ -219,7 +225,6 @@
                 item.remove();
                 return;
             }
-
             if(y < area.offsetHeight) requestAnimationFrame(move);
             else item.remove();
         }
