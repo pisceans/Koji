@@ -3,159 +3,232 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Koji Hunt: Ultra Responsive</title>
+    <title>Koji Hunt: Final Edition</title>
     <style>
-        /* ... (Gunakan CSS sebelumnya, tapi ubah bagian ini) ... */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            background-color: #000; color: white;
+            font-family: 'Courier New', Courier, monospace;
+            overflow-x: hidden;
+        }
 
+        /* --- LAYAR PILIH BAHASA --- */
+        #lang-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .lang-btn {
+            width: 260px; padding: 15px; margin: 10px;
+            background: none; border: 2px solid #0ff; color: #0ff;
+            font-size: 1.2rem; font-weight: bold; border-radius: 10px;
+        }
+
+        /* --- STRUKTUR HALAMAN --- */
+        .main-container { width: 100%; }
+        .panel {
+            width: 100%; height: 100vh;
+            position: relative; overflow: hidden;
+            display: flex; justify-content: center; align-items: center;
+        }
+        
+        .layer-bg { position: absolute; width: 100%; height: 100%; z-index: 1; }
+        .layer-bg img { width: 100%; height: 100%; object-fit: cover; opacity: 0.5; }
+
+        .floating-text {
+            z-index: 10; background: rgba(0,0,0,0.85); padding: 25px;
+            border: 2px solid #0ff; text-align: center; width: 85%;
+        }
+
+        /* --- AREA GAME --- */
+        .game-area {
+            position: relative; width: 100%; height: 100vh;
+            background: #000; overflow: hidden; touch-action: none;
+        }
+
+        /* KOJI: UKURAN BESAR & RESPONSIF */
         #game-koji {
             position: absolute;
-            width: 180px; height: auto;
-            bottom: 40px;
-            left: 50%;
+            width: 180px; /* Ukuran Besar */
+            bottom: 40px; left: 50%;
             transform: translateX(-50%);
             z-index: 100;
             filter: drop-shadow(0 0 15px #0ff);
-            /* HAPUS TRANSITION AGAR TIDAK DELAY */
-            transition: none !important; 
+            will-change: left;
             pointer-events: none;
-            will-change: left; /* Memberi tahu browser untuk siap bergerak cepat */
         }
-        
-        /* Pastikan game area mengunci semua gerakan default browser */
-        .game-area {
-            touch-action: none;
-            -webkit-user-select: none;
-            user-select: none;
+        #game-koji img { width: 100%; display: block; }
+
+        .item { position: absolute; width: 60px; height: 60px; z-index: 50; }
+
+        /* UI SKOR: Posisi Aman dari Status Bar */
+        .game-ui {
+            position: absolute; top: 50px; width: 100%;
+            display: flex; justify-content: space-evenly; z-index: 200;
+        }
+        .ui-box {
+            background: rgba(0,0,0,0.9); padding: 12px;
+            border: 2px solid #0ff; color: #0ff;
+            font-weight: bold; min-width: 120px; text-align: center;
         }
 
-        /* ... (Sisa CSS lainnya tetap sama) ... */
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); display: none;
+            flex-direction: column; justify-content: center; align-items: center;
+            z-index: 300; padding: 25px; text-align: center;
+        }
+        .overlay.active { display: flex; }
+        
+        .btn-main {
+            padding: 18px 50px; background: #0ff; border: none;
+            font-weight: bold; border-radius: 5px; font-size: 1.3rem; margin-top: 20px;
+        }
+
+        #flash { position: absolute; width: 100%; height: 100%; z-index: 150; pointer-events: none; }
+        .damage { animation: flashRed 0.2s; }
+        @keyframes flashRed { 50% { background: rgba(255,0,0,0.5); } }
     </style>
 </head>
 <body>
-    <script>
-    // --- KODE TRANSLASI TETAP SAMA ---
-    const translations = {
-        id: { sub: "MODE KARAKTER BESAR", scroll: "Scroll ke bawah untuk mulai!", score: "SKOR", time: "WAKTU", ready: "SIAP?", instr: "Tangkap Pisang, Hindari Bom!", start: "MULAI MISI", finish: "SELESAI", total: "Total Skor:", retry: "MAIN LAGI" },
-        en: { sub: "BIG CHARACTER MODE", scroll: "Scroll down to play!", score: "SCORE", time: "TIME", ready: "READY?", instr: "Catch Bananas, Avoid Bombs!", start: "START MISSION", finish: "FINISHED", total: "Total Score:", retry: "PLAY AGAIN" },
-        jp: { sub: "巨大キャラクターモード", scroll: "下にスクロールして開始！", score: "スコア", time: "時間", ready: "準備はいいか？", instr: "バナナを捕まえろ、爆弾を避けろ！", start: "ミッション開始", finish: "終了", total: "合計スコア:", retry: "もう一度" }
+
+<div id="lang-overlay">
+    <h2 style="color:#0ff;">SELECT LANGUAGE</h2>
+    <button class="lang-btn" onclick="setLanguage('id')">INDONESIA</button>
+    <button class="lang-btn" onclick="setLanguage('en')">ENGLISH</button>
+    <button class="lang-btn" onclick="setLanguage('jp')">日本語</button>
+</div>
+
+<div class="main-container">
+    <section class="panel">
+        <div class="layer-bg"><img src="bkg_kota.png"></div>
+        <div class="floating-text">
+            <h1 id="t-title">KOJI HUNT</h1>
+            <p id="t-sub" style="color:gold;"></p>
+            <p id="t-scroll"></p>
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="game-area" id="gameArea">
+            <div id="flash"></div>
+            <div class="game-bkg" style="position:absolute; width:100%; height:100%; opacity:0.3;"><img src="bkg_kota.png" style="width:100%; height:100%; object-fit:cover;"></div>
+            
+            <div id="game-koji"><img src="mid_koji.png"></div>
+            <div id="item-container"></div>
+
+            <div class="game-ui">
+                <div class="ui-box"><span id="l-score">SCORE</span>: <span id="score">0</span></div>
+                <div class="ui-box"><span id="l-time">TIME</span>: <span id="timer">30</span></div>
+            </div>
+
+            <div id="start-overlay" class="overlay">
+                <h1 id="t-ready" style="color: gold;">READY?</h1>
+                <p id="t-inst"></p>
+                <button class="btn-main" id="b-start" onclick="startGame()"></button>
+            </div>
+
+            <div id="end-overlay" class="overlay">
+                <h2 id="t-fin" style="color:#0ff;">FINISH</h2>
+                <h1 id="final-score" style="font-size: 5rem; color: gold;">0</h1>
+                <button class="btn-main" id="b-retry" onclick="startGame()"></button>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+    const i18n = {
+        id: { sub: "KARAKTER BESAR", scroll: "Scroll ke bawah!", score: "SKOR", time: "WAKTU", ready: "SIAP?", inst: "Tangkap Pisang!", start: "MULAI", fin: "SELESAI", retry: "ULANGI" },
+        en: { sub: "BIG CHARACTER MODE", scroll: "Scroll down to play!", score: "SCORE", time: "TIME", ready: "READY?", inst: "Catch Bananas!", start: "START", fin: "FINISHED", retry: "RETRY" },
+        jp: { sub: "巨大モード", scroll: "下にスクロール！", score: "スコア", time: "時間", ready: "準備完了？", inst: "バナナをゲット！", start: "スタート", fin: "終了", retry: "リトライ" }
     };
 
-    let currentLang = 'id';
-    function selectLang(lang) {
-        currentLang = lang;
-        const t = translations[lang];
-        document.getElementById('txt-subtitle').innerText = t.sub;
-        document.getElementById('txt-scroll').innerText = t.scroll;
-        document.getElementById('lbl-score').innerText = t.score;
-        document.getElementById('lbl-time').innerText = t.time;
-        document.getElementById('txt-ready').innerText = t.ready;
-        document.getElementById('txt-instr').innerText = t.instr;
-        document.getElementById('btn-start').innerText = t.start;
-        document.getElementById('txt-finish').innerText = t.finish;
-        document.getElementById('txt-total').innerText = t.total;
-        document.getElementById('btn-retry').innerText = t.retry;
+    function setLanguage(lang) {
+        const t = i18n[lang];
+        document.getElementById('t-sub').innerText = t.sub;
+        document.getElementById('t-scroll').innerText = t.scroll;
+        document.getElementById('l-score').innerText = t.score;
+        document.getElementById('l-time').innerText = t.time;
+        document.getElementById('t-ready').innerText = t.ready;
+        document.getElementById('t-inst').innerText = t.inst;
+        document.getElementById('b-start').innerText = t.start;
+        document.getElementById('t-fin').innerText = t.fin;
+        document.getElementById('b-retry').innerText = t.retry;
         document.getElementById('lang-overlay').style.display = 'none';
         document.getElementById('start-overlay').classList.add('active');
     }
 
     let score = 0, timeLeft = 30, gameActive = false, speed = 8;
-    let gameClock, spawnClock, collisionClock;
-    let targetX = 0; // Posisi tujuan Koji
-
     const koji = document.getElementById('game-koji');
     const area = document.getElementById('gameArea');
     const itemContainer = document.getElementById('item-container');
 
-    // --- OPTIMASI PERGERAKAN: ULTRA RESPONSIVE ---
-    area.addEventListener('touchstart', updateKojiPos, { passive: false });
-    area.addEventListener('touchmove', updateKojiPos, { passive: false });
+    // KONTROL ULTRA RESPONSIF (Anti-Lag)
+    area.addEventListener('touchmove', (e) => {
+        if(!gameActive) return;
+        const x = e.touches[0].clientX - area.getBoundingClientRect().left - (koji.offsetWidth/2);
+        koji.style.left = Math.max(0, Math.min(x, area.offsetWidth - koji.offsetWidth)) + 'px';
+    }, { passive: false });
 
-    function updateKojiPos(e) {
-        if (!gameActive) return;
-        e.preventDefault(); // Menghentikan semua lag/scroll default
-        
-        const touch = e.touches[0];
-        const rect = area.getBoundingClientRect();
-        
-        // Menghitung posisi tengah Koji tepat di bawah jari
-        let x = touch.clientX - rect.left - (koji.offsetWidth / 2);
-        
-        // Batas Layar
-        x = Math.max(0, Math.min(x, rect.width - koji.offsetWidth));
-        
-        // Update instan tanpa animasi CSS
-        koji.style.left = x + 'px';
-    }
-
-    // --- GAME ENGINE TETAP SAMA ---
     function startGame() {
         score = 0; timeLeft = 30; speed = 8; gameActive = true;
-        document.getElementById('score').innerText = score;
-        document.getElementById('timer').innerText = timeLeft;
+        document.getElementById('score').innerText = "0";
+        document.getElementById('timer').innerText = "30";
         document.querySelectorAll('.overlay').forEach(o => o.classList.remove('active'));
         itemContainer.innerHTML = '';
-
-        gameClock = setInterval(() => {
+        
+        const timerFunc = setInterval(() => {
             timeLeft--;
             document.getElementById('timer').innerText = timeLeft;
-            if (timeLeft % 4 === 0) speed += 2;
-            if (timeLeft <= 0) endGame();
+            if(timeLeft % 5 === 0) speed += 2;
+            if(timeLeft <= 0) { clearInterval(timerFunc); endGame(); }
         }, 1000);
 
-        spawnClock = setInterval(spawnItem, 400);
-        collisionClock = setInterval(checkHit, 20); // Dipercepat untuk akurasi
+        spawnLoop();
     }
 
-    function spawnItem() {
-        if (!gameActive) return;
+    function spawnLoop() {
+        if(!gameActive) return;
         const item = document.createElement('img');
-        const isBomb = Math.random() < 0.35;
+        const isBomb = Math.random() < 0.3;
         item.src = isBomb ? 'bomb.png' : 'banana.png';
         item.className = 'item';
-        item.dataset.type = isBomb ? 'bomb' : 'banana';
-        item.style.left = Math.random() * (area.offsetWidth - 55) + 'px';
+        item.style.left = Math.random() * (area.offsetWidth - 60) + 'px';
         item.style.top = '-70px';
         itemContainer.appendChild(item);
 
-        let pos = -70;
-        function fallItem() {
-            if (!gameActive) { item.remove(); return; }
-            pos += speed;
-            item.style.top = pos + 'px';
-            if (pos < area.offsetHeight) {
-                requestAnimationFrame(fallItem);
-            } else {
-                item.remove();
-            }
-        }
-        requestAnimationFrame(fallItem);
-    }
-
-    function checkHit() {
-        if (!gameActive) return;
-        const kRect = koji.getBoundingClientRect();
-        const items = document.querySelectorAll('.item');
-        items.forEach(item => {
-            const iRect = item.getBoundingClientRect();
-            // Hitbox disesuaikan agar pas dengan karakter besar
-            if (iRect.left < kRect.right - 40 && iRect.right > kRect.left + 40 &&
-                iRect.top < kRect.bottom - 20 && iRect.bottom > kRect.top + 20) {
-                if (item.dataset.type === 'banana') { score += 20; } 
-                else { 
-                    score = Math.max(0, score - 60); 
+        let y = -70;
+        function move() {
+            if(!gameActive || !item.parentNode) return;
+            y += speed;
+            item.style.top = y + 'px';
+            
+            // Cek Tabrakan
+            const k = koji.getBoundingClientRect();
+            const i = item.getBoundingClientRect();
+            if(i.left < k.right-30 && i.right > k.left+30 && i.top < k.bottom-10 && i.bottom > k.top+10) {
+                if(isBomb) {
+                    score = Math.max(0, score - 50);
                     document.getElementById('flash').classList.add('damage');
-                    koji.classList.add('shake');
-                    setTimeout(() => { document.getElementById('flash').classList.remove('damage'); koji.classList.remove('shake'); }, 300);
-                }
+                    setTimeout(() => document.getElementById('flash').classList.remove('damage'), 200);
+                } else { score += 20; }
                 document.getElementById('score').innerText = score;
                 item.remove();
+                return;
             }
-        });
+
+            if(y < area.offsetHeight) requestAnimationFrame(move);
+            else item.remove();
+        }
+        requestAnimationFrame(move);
+        setTimeout(spawnLoop, 500);
     }
 
     function endGame() {
         gameActive = false;
-        clearInterval(gameClock); clearInterval(spawnClock); clearInterval(collisionClock);
         document.getElementById('final-score').innerText = score;
         document.getElementById('end-overlay').classList.add('active');
     }
