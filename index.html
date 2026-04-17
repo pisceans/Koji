@@ -3,78 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Koji Catch Adventure</title>
+    <title>Koji: Banana Hunt Mobile</title>
     <style>
+        /* --- RESET & BASE --- */
+        * { box-sizing: border-box; }
         body, html {
-            margin: 0; padding: 0; height: 100%;
-            overflow-x: hidden; font-family: sans-serif;
+            margin: 0; padding: 0;
+            width: 100%; min-height: 100%;
             background-color: #000; color: white;
-            touch-action: none; /* Penting untuk kontrol game yang lancar */
+            font-family: 'Courier New', Courier, monospace;
+            /* touch-action: none; DIHAPUS DARI SINI AGAR BISA SCROLL */
         }
 
-        .main-container { height: 250vh; }
-        .panel { height: 100vh; position: relative; overflow: hidden; }
-        .scene-container { position: sticky; top: 0; width: 100%; height: 100vh; }
-        
-        .layer img { height: 100%; width: auto; min-width: 100vw; object-fit: cover; }
-        .layer-mid img { height: 45% !important; position: absolute; bottom: 5%; }
+        .main-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
 
-        /* GAME STYLES */
-        .game-area { position: relative; width: 100%; height: 100vh; overflow: hidden; background: #050505; }
-        .game-bkg img { position: absolute; width: 100%; height: 100%; object-fit: cover; opacity: 0.3; }
+        /* --- PARALLAX SECTION --- */
+        .panel {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
-        .game-char {
+        .scene-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .layer {
             position: absolute;
-            width: 80px; height: 110px; /* Area tabrakan */
-            bottom: 40px; left: 50%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .layer img {
+            height: 100%;
+            width: auto;
+            min-width: 100vw;
+            object-fit: cover;
+        }
+
+        .layer-mid img {
+            height: 50% !important;
+            bottom: 5%;
+            position: absolute;
+        }
+
+        .floating-text {
+            z-index: 100;
+            background: rgba(0, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            padding: 20px;
+            border: 2px solid #0ff;
+            text-align: center;
+            width: 80%;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+
+        /* --- GAME SECTION --- */
+        .game-area {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            background: #050505;
+            overflow: hidden;
+            touch-action: none; /* KUNCI SCROLL HANYA DI SINI SAAT MAIN */
+        }
+
+        .game-bkg img {
+            position: absolute;
+            width: 100%; height: 100%;
+            object-fit: cover; opacity: 0.3;
+        }
+
+        #game-koji {
+            position: absolute;
+            width: 80px; height: auto;
+            bottom: 30px; left: 50%;
             transform: translateX(-50%);
             z-index: 50;
-            transition: transform 0.1s ease-out;
         }
-        .game-char img { width: 100%; pointer-events: none; }
+        #game-koji img { width: 100%; pointer-events: none; }
 
         .item {
             position: absolute;
-            width: 40px; height: 40px;
+            width: 45px; height: 45px;
             z-index: 60;
-            will-change: transform;
         }
 
         .game-ui {
-            position: absolute; top: 20px; width: 100%;
+            position: absolute; top: 15px; width: 100%;
             display: flex; justify-content: space-around; z-index: 100;
         }
-        .ui-element { background: rgba(0,0,0,0.8); padding: 10px 20px; border: 1px solid #0ff; border-radius: 10px; }
+        .ui-box {
+            background: rgba(0,0,0,0.8);
+            padding: 8px 15px;
+            border: 1px solid #0ff;
+            font-size: 0.9rem;
+            border-radius: 5px;
+        }
 
-        .overlay-msg {
+        /* OVERLAYS */
+        .overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.9); display: none;
             flex-direction: column; justify-content: center; align-items: center;
-            z-index: 200; text-align: center; padding: 20px;
+            z-index: 200; padding: 30px; text-align: center;
         }
-        .overlay-msg.active { display: flex; }
-        button { padding: 15px 40px; background: #0ff; border: none; font-weight: bold; border-radius: 30px; }
+        .overlay.active { display: flex; }
         
-        /* Efek saat kena Bom */
-        .shake { animation: shake 0.3s; }
-        @keyframes shake {
-            0% { transform: translateX(-50%) translate(0); }
-            25% { transform: translateX(-50%) translate(5px); }
-            50% { transform: translateX(-50%) translate(-5px); }
-            100% { transform: translateX(-50%) translate(0); }
+        button {
+            padding: 15px 40px; background: #0ff; border: none;
+            font-weight: bold; border-radius: 50px; font-size: 1.1rem;
+            margin-top: 20px; box-shadow: 0 0 15px #0ff;
+        }
+
+        .shake { animation: shakeAnim 0.3s; }
+        @keyframes shakeAnim {
+            0%, 100% { transform: translateX(-50%); }
+            25% { transform: translateX(-52%); }
+            75% { transform: translateX(-48%); }
         }
     </style>
 </head>
 <body>
 
 <div class="main-container">
+    
     <section class="panel">
         <div class="scene-container">
-            <div class="layer"><img src="bkg_kota.png"></div>
-            <div class="layer-mid"><img src="mid_koji.png"></div>
-            <div style="position:absolute; z-index:100; background:rgba(0,0,0,0.7); padding:20px; border:1px solid #0ff;">
-                <h2>KOJI: BANANA HUNT</h2>
-                <p>Scroll ke bawah untuk misi!</p>
+            <div class="layer" data-speed="0.2"><img src="bkg_kota.png"></div>
+            <div class="layer" data-speed="0.5"><img src="mid_koji.png" style="height:40%; bottom:10%; position:absolute;"></div>
+            <div class="layer">
+                <div class="floating-text">
+                    <h2 style="color:#0ff;">KOJI ADVENTURE</h2>
+                    <p>Misi: Kumpulkan Pisang & Hindari Bom!</p>
+                    <p style="font-size:0.8rem; color:#aaa;">(Scroll ke bawah untuk mulai)</p>
+                </div>
             </div>
         </div>
     </section>
@@ -83,121 +159,138 @@
         <div class="game-area" id="gameArea">
             <div class="game-bkg"><img src="bkg_kota.png"></div>
             
-            <div id="game-koji" class="game-char">
+            <div id="game-koji">
                 <img src="mid_koji.png">
             </div>
 
             <div id="item-container"></div>
 
             <div class="game-ui">
-                <div class="ui-element">SKOR: <span id="score-display">0</span></div>
-                <div class="ui-element">WAKTU: <span id="timer-display">30</span></div>
+                <div class="ui-box">SKOR: <span id="score">0</span></div>
+                <div class="ui-box">WAKTU: <span id="timer">30</span></div>
             </div>
 
-            <div id="start-overlay" class="overlay-msg active">
-                <h2 style="color: gold;">ISI ENERGI KOJI!</h2>
-                <p>Geser Koji untuk menangkap Pisang.<br><b style="color:red;">HINDARI BOM!</b></p>
-                <button onclick="startGame()">MULAI MISI</button>
+            <div id="start-overlay" class="overlay active">
+                <h2 style="color: gold;">MISI ENERGI</h2>
+                <p>Geser Koji ke kiri/kanan untuk menangkap pisang.<br><br><span style="color:red;">HATI-HATI DENGAN BOM!</span></p>
+                <button onclick="startGame()">MULAI GAME</button>
             </div>
 
-            <div id="end-overlay" class="overlay-msg">
-                <h2>MISI SELESAI</h2>
-                <h1 id="final-score" style="color:#0ff; font-size: 3rem;">0</h1>
-                <button onclick="startGame()">ULANGI</button>
+            <div id="end-overlay" class="overlay">
+                <h2 style="color: #0ff;">WAKTU HABIS</h2>
+                <p>Total Skor Kamu:</p>
+                <h1 id="final-score" style="font-size: 4rem; margin: 10px 0;">0</h1>
+                <button onclick="startGame()">MAIN LAGI</button>
             </div>
         </div>
     </section>
+
 </div>
 
 <script>
+    // --- 1. PARALLAX SIMPLE ---
+    window.addEventListener('scroll', () => {
+        const scrolled = window.pageYOffset;
+        document.querySelectorAll('[data-speed]').forEach(el => {
+            const speed = el.getAttribute('data-speed');
+            el.style.transform = `translateY(${scrolled * speed}px)`;
+        });
+    });
+
+    // --- 2. GAME ENGINE ---
     let score = 0, timeLeft = 30, gameActive = false;
     let gameInterval, spawnInterval, collisionInterval;
 
     const koji = document.getElementById('game-koji');
     const area = document.getElementById('gameArea');
     const itemContainer = document.getElementById('item-container');
-    const scoreUI = document.getElementById('score-display');
-    const timerUI = document.getElementById('timer-display');
+    const scoreUI = document.getElementById('score');
+    const timerUI = document.getElementById('timer');
 
-    // Kontrol Geser Koji
+    // Kontrol Geser Jari (Mobile)
     area.addEventListener('touchmove', (e) => {
         if (!gameActive) return;
         const touch = e.touches[0];
         const rect = area.getBoundingClientRect();
         let x = touch.clientX - rect.left - (koji.offsetWidth / 2);
+        
+        // Batas Layar
         x = Math.max(0, Math.min(x, rect.width - koji.offsetWidth));
         koji.style.left = x + 'px';
-    });
+    }, { passive: false });
 
     function startGame() {
         score = 0; timeLeft = 30; gameActive = true;
-        scoreUI.innerText = score; timerUI.innerText = timeLeft;
-        document.querySelectorAll('.overlay-msg').forEach(o => o.classList.remove('active'));
-        itemContainer.innerHTML = '';
+        scoreUI.innerText = score;
+        timerUI.innerText = timeLeft;
         
+        document.getElementById('start-overlay').classList.remove('active');
+        document.getElementById('end-overlay').classList.remove('active');
+        itemContainer.innerHTML = '';
+
         gameInterval = setInterval(() => {
             timeLeft--;
             timerUI.innerText = timeLeft;
             if (timeLeft <= 0) endGame();
         }, 1000);
 
-        spawnInterval = setInterval(spawnItem, 500);
-        collisionInterval = setInterval(checkCollisions, 50); // Cek tabrakan setiap 50ms
+        spawnInterval = setInterval(spawnItem, 600);
+        collisionInterval = setInterval(checkHit, 50);
     }
 
     function spawnItem() {
         if (!gameActive) return;
         const item = document.createElement('img');
-        const isBomb = Math.random() < 0.3; // 30% peluang muncul bom
+        const isBomb = Math.random() < 0.3;
         
         item.src = isBomb ? 'bomb.png' : 'banana.png';
         item.className = 'item';
         item.dataset.type = isBomb ? 'bomb' : 'banana';
         
-        const x = Math.random() * (area.offsetWidth - 40);
-        item.style.left = x + 'px';
+        const startX = Math.random() * (area.offsetWidth - 45);
+        item.style.left = startX + 'px';
         item.style.top = '-50px';
         
         itemContainer.appendChild(item);
 
-        // Animasi jatuh manual untuk kontrol koordinat yang lebih baik
         let pos = -50;
+        const fallSpeed = 4 + (Math.random() * 3); // Kecepatan variasi
+        
         const fall = setInterval(() => {
-            if (!gameActive) { clearInterval(fall); return; }
-            pos += 5; // Kecepatan jatuh
+            if (!gameActive) { clearInterval(fall); item.remove(); return; }
+            pos += fallSpeed;
             item.style.top = pos + 'px';
             
             if (pos > area.offsetHeight) {
                 clearInterval(fall);
-                item.remove();
+                if (item.parentNode) item.remove();
             }
         }, 20);
     }
 
-    function checkCollisions() {
+    function checkHit() {
         if (!gameActive) return;
-        const kojiRect = koji.getBoundingClientRect();
+        const kRect = koji.getBoundingClientRect();
         const items = document.querySelectorAll('.item');
 
         items.forEach(item => {
-            const itemRect = item.getBoundingClientRect();
+            const iRect = item.getBoundingClientRect();
 
-            // Logika Tabrakan (Overlap)
             if (
-                itemRect.left < kojiRect.right &&
-                itemRect.right > kojiRect.left &&
-                itemRect.top < kojiRect.bottom &&
-                itemRect.bottom > kojiRect.top
+                iRect.left < kRect.right &&
+                iRect.right > kRect.left &&
+                iRect.top < kRect.bottom &&
+                iRect.bottom > kRect.top
             ) {
                 if (item.dataset.type === 'banana') {
                     score += 10;
                 } else {
-                    score = Math.max(0, score - 20); // Kurangi skor jika kena bom
+                    score = Math.max(0, score - 20);
                     koji.classList.add('shake');
                     setTimeout(() => koji.classList.remove('shake'), 300);
                 }
                 scoreUI.innerText = score;
-                item.remove(); // Hapus item setelah bersentuhan
+                item.remove();
             }
         });
     }
