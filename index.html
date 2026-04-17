@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Koji Hunt: Hardcore Mobile</title>
+    <title>Koji Hunt: Big & Hardcore</title>
     <style>
         * { box-sizing: border-box; }
         body, html {
@@ -32,7 +32,7 @@
             box-shadow: 0 0 20px #0ff;
         }
 
-        /* --- GAME AREA FIX --- */
+        /* --- GAME AREA --- */
         .game-area {
             position: relative; width: 100%; height: 100vh;
             background: #000; overflow: hidden; touch-action: none;
@@ -41,52 +41,55 @@
         .game-bkg { position: absolute; width: 100%; height: 100%; z-index: 1; }
         .game-bkg img { width: 100%; height: 100%; object-fit: cover; opacity: 0.3; }
 
-        /* Koji: Pastikan Z-Index Tinggi agar tidak tertutup */
+        /* KOJI DIPERBESAR (BIG SIZE) */
         #game-koji {
             position: absolute;
-            width: 130px; height: auto; 
-            bottom: 20px; left: 50%;
+            width: 160px; height: auto; /* Ukuran jauh lebih besar */
+            bottom: 30px; left: 50%;
             transform: translateX(-50%);
-            z-index: 100; /* Di depan semua item */
-            filter: drop-shadow(0 0 10px #0ff);
+            z-index: 100;
+            filter: drop-shadow(0 0 15px rgba(0, 255, 255, 0.7));
             pointer-events: none;
+            transition: left 0.1s ease-out;
         }
         #game-koji img { width: 100%; display: block; }
 
-        /* Item yang jatuh */
+        /* Item Jatuh */
         .item { 
-            position: absolute; width: 50px; height: 50px; 
-            z-index: 50; /* Di belakang Koji tapi di depan Background */
+            position: absolute; width: 55px; height: 55px; 
+            z-index: 50; 
         }
 
-        /* UI: Pastikan Z-Index paling tinggi */
+        /* UI Styling */
         .game-ui {
-            position: absolute; top: 10px; width: 100%;
+            position: absolute; top: 15px; width: 100%;
             display: flex; justify-content: space-evenly; 
             z-index: 200; 
         }
         .ui-box {
-            background: #000; padding: 10px;
+            background: #000; padding: 12px;
             border: 2px solid #0ff; color: #0ff;
-            font-weight: bold; min-width: 100px; text-align: center;
+            font-weight: bold; min-width: 110px; text-align: center;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
         }
 
         /* Overlay */
         .overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95); display: none;
+            background: rgba(0,0,0,0.96); display: none;
             flex-direction: column; justify-content: center; align-items: center;
-            z-index: 300; padding: 20px; text-align: center;
+            z-index: 300; padding: 25px; text-align: center;
         }
         .overlay.active { display: flex; }
         
         button {
-            padding: 15px 40px; background: #0ff; border: none;
-            font-weight: bold; border-radius: 5px; font-size: 1.2rem;
-            margin-top: 20px; box-shadow: 0 0 10px #0ff;
+            padding: 18px 50px; background: #0ff; border: none;
+            font-weight: bold; border-radius: 8px; font-size: 1.3rem;
+            margin-top: 25px; box-shadow: 0 0 15px #0ff;
+            color: #000;
         }
 
-        /* Efek damage */
+        /* Visual Effects */
         #flash-effect {
             position: absolute; width: 100%; height: 100%; 
             z-index: 150; pointer-events: none;
@@ -94,14 +97,14 @@
         .damage-flash { animation: flashRed 0.2s; }
         @keyframes flashRed {
             0% { background: rgba(255,0,0,0); }
-            50% { background: rgba(255,0,0,0.4); }
+            50% { background: rgba(255,0,0,0.5); }
             100% { background: rgba(255,0,0,0); }
         }
         .shake { animation: shakeAnim 0.2s; }
         @keyframes shakeAnim {
-            0%, 100% { transform: translateX(-50%) rotate(0); }
-            25% { transform: translateX(-55%) rotate(-5deg); }
-            75% { transform: translateX(-45%) rotate(5deg); }
+            0%, 100% { transform: translateX(-50%) scale(1); }
+            25% { transform: translateX(-53%) scale(1.05); }
+            75% { transform: translateX(-47%) scale(0.95); }
         }
     </style>
 </head>
@@ -112,9 +115,9 @@
     <section class="panel">
         <div class="layer-bg"><img src="bkg_kota.png"></div>
         <div class="floating-text">
-            <h1 style="color:#0ff; margin:0;">KOJI HUNT</h1>
-            <p style="color:gold;">MODE: HARDCORE</p>
-            <p>Scroll ke bawah untuk MISI</p>
+            <h1 style="color:#0ff; margin:0; font-size: 2rem;">KOJI HUNT</h1>
+            <p style="color:gold; letter-spacing: 2px;">BIG CHARACTER MODE</p>
+            <p>Scroll ke bawah untuk mulai bermain!</p>
         </div>
     </section>
 
@@ -135,16 +138,16 @@
             </div>
 
             <div id="start-overlay" class="overlay active">
-                <h2 style="color: red;">READY?</h2>
-                <p>Tangkap Pisang.<br>Hindari Bom!</p>
-                <button onclick="startGame()">START</button>
+                <h1 style="color: gold; font-size: 2.5rem;">READY?</h1>
+                <p>Gunakan jempol untuk menggeser Koji.<br>Kumpulkan Pisang secepat mungkin!</p>
+                <button onclick="startGame()">MULAI MISI</button>
             </div>
 
             <div id="end-overlay" class="overlay">
-                <h2 style="color:#0ff;">FINISH</h2>
-                <p>Skor Kamu:</p>
-                <h1 id="final-score" style="font-size: 4rem; color: gold;">0</h1>
-                <button onclick="startGame()">ULANGI</button>
+                <h2 style="color:#0ff;">MISI SELESAI</h2>
+                <p>Total Energi Terkumpul:</p>
+                <h1 id="final-score" style="font-size: 5rem; color: gold; margin: 15px 0;">0</h1>
+                <button onclick="startGame()">MAIN LAGI</button>
             </div>
         </div>
     </section>
@@ -153,7 +156,7 @@
 
 <script>
     let score = 0, timeLeft = 30, gameActive = false;
-    let speed = 6;
+    let speed = 7;
     let gameClock, spawnClock, collisionClock;
 
     const koji = document.getElementById('game-koji');
@@ -161,20 +164,19 @@
     const flash = document.getElementById('flash-effect');
     const itemContainer = document.getElementById('item-container');
 
-    // Kontrol: Menggunakan TouchMove agar Koji geser mengikuti jari
+    // Kontrol: Menggunakan Touch agar Koji lebih responsif di layar besar
     area.addEventListener('touchmove', (e) => {
         if (!gameActive) return;
         const touch = e.touches[0];
         const rect = area.getBoundingClientRect();
         let x = touch.clientX - rect.left - (koji.offsetWidth / 2);
         
-        // Batas Layar
         x = Math.max(0, Math.min(x, rect.width - koji.offsetWidth));
         koji.style.left = x + 'px';
     }, { passive: false });
 
     function startGame() {
-        score = 0; timeLeft = 30; speed = 6; gameActive = true;
+        score = 0; timeLeft = 30; speed = 7; gameActive = true;
         document.getElementById('score').innerText = score;
         document.getElementById('timer').innerText = timeLeft;
         document.querySelectorAll('.overlay').forEach(o => o.classList.remove('active'));
@@ -183,12 +185,12 @@
         gameClock = setInterval(() => {
             timeLeft--;
             document.getElementById('timer').innerText = timeLeft;
-            if (timeLeft % 5 === 0) speed += 1; // Makin lama makin cepat
+            if (timeLeft % 4 === 0) speed += 1.5; // Kecepatan meningkat lebih agresif
             if (timeLeft <= 0) endGame();
         }, 1000);
 
-        spawnClock = setInterval(spawnItem, 450);
-        collisionClock = setInterval(checkHit, 40);
+        spawnClock = setInterval(spawnItem, 400); // Barang muncul lebih cepat
+        collisionClock = setInterval(checkHit, 30);
     }
 
     function spawnItem() {
@@ -200,13 +202,13 @@
         item.className = 'item';
         item.dataset.type = isBomb ? 'bomb' : 'banana';
         
-        const x = Math.random() * (area.offsetWidth - 50);
+        const x = Math.random() * (area.offsetWidth - 55);
         item.style.left = x + 'px';
-        item.style.top = '-60px';
+        item.style.top = '-70px';
         
         itemContainer.appendChild(item);
 
-        let pos = -60;
+        let pos = -70;
         const fall = setInterval(() => {
             if (!gameActive) { clearInterval(fall); item.remove(); return; }
             pos += speed;
@@ -222,18 +224,28 @@
     function checkHit() {
         if (!gameActive) return;
         const kRect = koji.getBoundingClientRect();
+        
+        // Pengecilan Hitbox agar tidak terlalu sensitif karena Koji besar
+        const hitboxAdjustment = 20;
+        const adjKRect = {
+            left: kRect.left + hitboxAdjustment,
+            right: kRect.right - hitboxAdjustment,
+            top: kRect.top + hitboxAdjustment,
+            bottom: kRect.bottom
+        };
+
         const items = document.querySelectorAll('.item');
 
         items.forEach(item => {
             const iRect = item.getBoundingClientRect();
 
-            if (iRect.left < kRect.right && iRect.right > kRect.left &&
-                iRect.top < kRect.bottom && iRect.bottom > kRect.top) {
+            if (iRect.left < adjKRect.right && iRect.right > adjKRect.left &&
+                iRect.top < adjKRect.bottom && iRect.bottom > adjKRect.top) {
                 
                 if (item.dataset.type === 'banana') {
-                    score += 15;
+                    score += 20; // Skor per pisang naik
                 } else {
-                    score = Math.max(0, score - 40);
+                    score = Math.max(0, score - 60); // Penalti bom lebih fatal
                     flash.classList.add('damage-flash');
                     koji.classList.add('shake');
                     setTimeout(() => {
